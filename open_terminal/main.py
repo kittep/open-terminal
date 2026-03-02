@@ -311,20 +311,20 @@ async def health():
 
 
 @app.get(
-    "/files/cwd/{user_id}",
+    "/files/cwd",
     include_in_schema=False,
     dependencies=[Depends(verify_api_key)],
 )
-async def get_cwd(user_id):
+async def get_cwd(user_id: Optional[str] = None):
     return {"cwd": os.getcwd()}
 
 
 @app.post(
-    "/files/cwd/{user_id}",
+    "/files/cwd",
     include_in_schema=False,
     dependencies=[Depends(verify_api_key)],
 )
-async def set_cwd(user_id: str, request: MkdirRequest):
+async def set_cwd(user_id: Optional[str] = None, request: MkdirRequest):
     target = os.path.abspath(request.path)
     if not await aiofiles.os.path.isdir(target):
         raise HTTPException(status_code=404, detail="Directory not found")
@@ -336,7 +336,7 @@ async def set_cwd(user_id: str, request: MkdirRequest):
 
 
 @app.get(
-    "/files/list/{user_id}",
+    "/files/list",
     operation_id="list_files",
     summary="List directory contents",
     description="Return a structured listing of files and directories at the given path.",
@@ -347,7 +347,7 @@ async def set_cwd(user_id: str, request: MkdirRequest):
     },
 )
 async def list_files(
-    user_id: str,
+    user_id: Optional[str] = None,
     directory: str = Query(".", description="Directory path to list."),
 ):
     target = os.path.abspath(directory)
@@ -377,7 +377,7 @@ async def list_files(
 
 
 @app.get(
-    "/files/read/{user_id}",
+    "/files/read",
     operation_id="read_file",
     summary="Read a file",
     description="Return the contents of a file. Text files return JSON with a content string. Supported binary types (configurable, default: image/*) return the raw binary with the appropriate Content-Type. Unsupported binary types are rejected. Optionally specify a line range for text files. This returns file content to you but does not show anything to the user. Use display_file to let the user see a file.",
@@ -389,7 +389,7 @@ async def list_files(
     },
 )
 async def read_file(
-    user_id: str,
+    user_id: Optional[str] = None,
     path: str = Query(..., description="Path to the file to read."),
     start_line: Optional[int] = Query(
         None, description="First line to return (1-indexed, inclusive).", ge=1
@@ -448,7 +448,7 @@ async def read_file(
 
 
 @app.get(
-    "/files/display/{user_id}",
+    "/files/display",
     operation_id="display_file",
     summary="Display a file to the user",
     description="Open a file in the user's file viewer so they can see it. Use this when the user wants to view or look at a file. This does not return file content to you — use read_file if you need to read the content yourself.",
@@ -458,7 +458,7 @@ async def read_file(
     },
 )
 async def display_file(
-    user_id: str,
+    user_id: Optional[str] = None,
     path: str = Query(..., description="Absolute path to the file to display."),
 ):
     """Signal that a file should be displayed to the user.
@@ -474,12 +474,12 @@ async def display_file(
 
 
 @app.get(
-    "/files/view/{user_id}",
+    "/files/view",
     include_in_schema=False,
     dependencies=[Depends(verify_api_key)],
 )
 async def view_file(
-    user_id: str,
+    user_id: Optional[str] = None,
     path: str = Query(..., description="Path to the file to view."),
 ):
     """Return raw file bytes with the appropriate Content-Type.
@@ -502,7 +502,7 @@ async def view_file(
 
 
 @app.post(
-    "/files/write/{user_id}",
+    "/files/write",
     operation_id="write_file",
     summary="Write a file",
     description="Write text content to a file. Creates parent directories automatically. Overwrites if the file already exists.",
@@ -511,7 +511,7 @@ async def view_file(
         401: {"description": "Invalid or missing API key."},
     },
 )
-async def write_file(user_id: str, request: WriteRequest):
+async def write_file(user_id: Optional[str] = None, request: WriteRequest):
     target = os.path.abspath(request.path)
     try:
         await aiofiles.os.makedirs(os.path.dirname(target), exist_ok=True)
@@ -523,11 +523,11 @@ async def write_file(user_id: str, request: WriteRequest):
 
 
 @app.post(
-    "/files/mkdir/{user_id}",
+    "/files/mkdir",
     include_in_schema=False,
     dependencies=[Depends(verify_api_key)],
 )
-async def mkdir(user_id: str, request: MkdirRequest):
+async def mkdir(user_id: Optional[str] = None, request: MkdirRequest):
     target = os.path.abspath(request.path)
     try:
         await aiofiles.os.makedirs(target, exist_ok=True)
@@ -537,12 +537,12 @@ async def mkdir(user_id: str, request: MkdirRequest):
 
 
 @app.delete(
-    "/files/delete/{user_id}",
+    "/files/delete",
     include_in_schema=False,
     dependencies=[Depends(verify_api_key)],
 )
 async def delete_entry(
-    user_id: str,
+    user_id: Optional[str] = None,
     path: str = Query(..., description="Path to delete."),
 ):
     target = os.path.abspath(path)
@@ -561,7 +561,7 @@ async def delete_entry(
 
 
 @app.post(
-    "/files/replace/{user_id}",
+    "/files/replace",
     operation_id="replace_file_content",
     summary="Replace content in a file",
     description="Find and replace exact strings in a file. Supports multiple replacements in one call with optional line range narrowing.",
@@ -572,7 +572,7 @@ async def delete_entry(
         401: {"description": "Invalid or missing API key."},
     },
 )
-async def replace_file_content(user_id: str, request: ReplaceRequest):
+async def replace_file_content(user_id: Optional[str] = None, request: ReplaceRequest):
     target = os.path.abspath(request.path)
     if not await aiofiles.os.path.isfile(target):
         raise HTTPException(status_code=404, detail="File not found")
@@ -621,7 +621,7 @@ async def replace_file_content(user_id: str, request: ReplaceRequest):
 
 
 @app.get(
-    "/files/grep/{user_id}",
+    "/files/grep",
     operation_id="grep_search",
     summary="Search file contents",
     description="Search for a text pattern across files in a directory. Returns structured matches with file paths, line numbers, and matching lines. Skips binary files.",
@@ -633,7 +633,7 @@ async def replace_file_content(user_id: str, request: ReplaceRequest):
     },
 )
 async def grep_search(
-    user_id: str,
+    user_id: Optional[str] = None,
     query: str = Query(..., description="Text or regex pattern to search for."),
     path: str = Query(".", description="Directory or file to search in."),
     regex: bool = Query(False, description="Treat query as a regex pattern."),
@@ -724,7 +724,7 @@ async def grep_search(
 
 
 @app.get(
-    "/files/glob/{user_id}",
+    "/files/glob",
     operation_id="glob_search",
     summary="Search files by name",
     description="Search for files and subdirectories by name within a specified directory using glob patterns. Results will include the relative path, type, size, and modification time.",
@@ -735,7 +735,7 @@ async def grep_search(
     },
 )
 async def glob_search(
-    user_id: str,
+    user_id: Optional[str] = None,
     pattern: str = Query(..., description="Glob pattern to search for (e.g. '*.py')."),
     path: str = Query(".", description="Directory to search within."),
     exclude: Optional[list[str]] = Query(
@@ -819,7 +819,7 @@ async def glob_search(
 
 
 @app.post(
-    "/files/upload/{user_id}",
+    "/files/upload",
     include_in_schema=False,
     operation_id="upload_file",
     summary="Upload a file",
@@ -830,7 +830,7 @@ async def glob_search(
     },
 )
 async def upload_file(
-    user_id: str,
+    user_id: Optional[str] = None,
     directory: str = Query(..., description="Destination directory for the file."),
     url: Optional[str] = Query(
         None,
@@ -875,7 +875,7 @@ async def upload_file(
 
 
 @app.get(
-    "/execute/{user_id}",
+    "/execute",
     operation_id="list_processes",
     summary="List running commands",
     description="Returns a list of all tracked background processes, including running, done, and killed.",
@@ -884,7 +884,7 @@ async def upload_file(
         401: {"description": "Invalid or missing API key."},
     },
 )
-async def list_processes(user_id):
+async def list_processes(user_id: Optional[str] = None):
     _cleanup_expired()
     return [
         {
@@ -899,7 +899,7 @@ async def list_processes(user_id):
 
 
 @app.post(
-    "/execute/{user_id}",
+    "/execute",
     operation_id="run_command",
     summary="Execute a command",
     description=_EXECUTE_DESCRIPTION,
@@ -909,7 +909,7 @@ async def list_processes(user_id):
     },
 )
 async def execute(
-    user_id: str,
+    user_id: Optional[str] = None,
     request: ExecRequest,
     wait: Optional[float] = Query(
         None,
@@ -959,7 +959,7 @@ async def execute(
 
 
 @app.get(
-    "/execute/{process_id}/status/{user_id}",
+    "/execute/{process_id}/status",
     operation_id="get_process_status",
     summary="Get command status and output",
     description="Returns new output since the last poll, process status, and exit code. Output is drained on read to keep memory bounded.",
@@ -971,7 +971,7 @@ async def execute(
 )
 async def get_status(
     process_id: str,
-    user_id: str,
+    user_id: Optional[str] = None,
     wait: Optional[float] = Query(
         None,
         description="Seconds to wait for the process to finish before returning. Returns early if the process exits. Null to return immediately.",
@@ -1016,7 +1016,7 @@ async def get_status(
 
 
 @app.post(
-    "/execute/{process_id}/input/{user_id}",
+    "/execute/{process_id}/input",
     operation_id="send_process_input",
     summary="Send input to a running command",
     description="Write text to the process's stdin. Include newline characters as needed.",
@@ -1027,7 +1027,7 @@ async def get_status(
         401: {"description": "Invalid or missing API key."},
     },
 )
-async def send_input(process_id: str, user_id: str, body: InputRequest):
+async def send_input(process_id: str, user_id: Optional[str] = None, body: InputRequest):
     background_process = _get_process(process_id)
     if background_process.status != "running":
         raise HTTPException(status_code=400, detail="Process has already exited")
@@ -1047,7 +1047,7 @@ async def send_input(process_id: str, user_id: str, body: InputRequest):
 
 
 @app.delete(
-    "/execute/{process_id}/{user_id}",
+    "/execute/{process_id}",
     operation_id="kill_process",
     summary="Kill a running command",
     description="Terminate the process. Sends SIGTERM by default for graceful shutdown. Use force=true to send SIGKILL.",
@@ -1059,7 +1059,7 @@ async def send_input(process_id: str, user_id: str, body: InputRequest):
 )
 async def kill_process(
     process_id: str,
-    user_id: str,
+    user_id: Optional[str] = None,
     force: bool = Query(False, description="Send SIGKILL instead of SIGTERM."),
 ):
     background_process = _get_process(process_id)
