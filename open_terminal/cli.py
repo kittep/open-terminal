@@ -64,7 +64,7 @@ def run(host: str, port: int, cwd: str | None, api_key: str, cors_allowed_origin
         click.echo("=" * 60)
     click.echo()
 
-    uvicorn.run("open_terminal.patch:app", host=host, port=port)
+    uvicorn.run("open_terminal.main:app", host=host, port=port)
 
 
 @main.command()
