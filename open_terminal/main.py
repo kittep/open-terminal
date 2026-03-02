@@ -324,7 +324,7 @@ async def get_cwd(user_id: Optional[str] = None):
     include_in_schema=False,
     dependencies=[Depends(verify_api_key)],
 )
-async def set_cwd(user_id: Optional[str] = None, request: MkdirRequest):
+async def set_cwd(request: MkdirRequest, user_id: Optional[str] = None):
     target = os.path.abspath(request.path)
     if not await aiofiles.os.path.isdir(target):
         raise HTTPException(status_code=404, detail="Directory not found")
@@ -511,7 +511,7 @@ async def view_file(
         401: {"description": "Invalid or missing API key."},
     },
 )
-async def write_file(user_id: Optional[str] = None, request: WriteRequest):
+async def write_file(request: WriteRequest, user_id: Optional[str] = None):
     target = os.path.abspath(request.path)
     try:
         await aiofiles.os.makedirs(os.path.dirname(target), exist_ok=True)
@@ -527,7 +527,7 @@ async def write_file(user_id: Optional[str] = None, request: WriteRequest):
     include_in_schema=False,
     dependencies=[Depends(verify_api_key)],
 )
-async def mkdir(user_id: Optional[str] = None, request: MkdirRequest):
+async def mkdir(request: MkdirRequest, user_id: Optional[str] = None):
     target = os.path.abspath(request.path)
     try:
         await aiofiles.os.makedirs(target, exist_ok=True)
@@ -572,7 +572,7 @@ async def delete_entry(
         401: {"description": "Invalid or missing API key."},
     },
 )
-async def replace_file_content(user_id: Optional[str] = None, request: ReplaceRequest):
+async def replace_file_content(request: ReplaceRequest, user_id: Optional[str] = None):
     target = os.path.abspath(request.path)
     if not await aiofiles.os.path.isfile(target):
         raise HTTPException(status_code=404, detail="File not found")
@@ -909,8 +909,8 @@ async def list_processes(user_id: Optional[str] = None):
     },
 )
 async def execute(
-    user_id: Optional[str] = None,
     request: ExecRequest,
+    user_id: Optional[str] = None,
     wait: Optional[float] = Query(
         None,
         description="Seconds to wait for the command to finish before returning. If the command completes in time, output is included inline. Null to return immediately.",
@@ -1027,7 +1027,7 @@ async def get_status(
         401: {"description": "Invalid or missing API key."},
     },
 )
-async def send_input(process_id: str, user_id: Optional[str] = None, body: InputRequest):
+async def send_input(process_id: str, body: InputRequest, user_id: Optional[str] = None):
     background_process = _get_process(process_id)
     if background_process.status != "running":
         raise HTTPException(status_code=400, detail="Process has already exited")
